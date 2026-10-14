@@ -26,7 +26,7 @@ The gateway is the source of truth for every request and response shape. This SD
 4. Do not add dependencies for minor convenience, speculative abstractions, or options without a concrete use. The dependencies are `github.com/coder/websocket`, `golang.org/x/time` and `github.com/sony/gobreaker/v2` ([ADR-005](docs/book/src/architecture/decisions/ADR-005-resilience-dependencies.md)); a new one needs an ADR.
 5. Every endpoint gets a test at the HTTP boundary (`<area>_test.go`, against the mock gateway of `gateway_test.go`) that checks method, path, query, body, and decoding. Logic (parsing, mapping, decisions) gets table-driven tests: a list of inputs and expected outputs, one assertion loop. New response types get a captured vector (`scripts/capture-vectors.py`).
 6. Work on a non-`main` branch (`feat/*`, `fix/*`, `docs/*`), open a PR to `main`, and never push directly to `main`. Releases are tagged `vX.Y.Z` from `main`; the Go module proxy and pkg.go.dev pick the tag up.
-7. Use conventional commits.
+7. Use conventional commits. Commits are authored by the repository owner; do not add bot or AI attribution footers or files.
 8. Name no application, company or deployment that uses the client: not in code, docs, test vectors, commits or PRs. Say "an application". Capture vectors with `ZEROCLAW_REDACT` set to your own names.
 
 ## User-Facing Text

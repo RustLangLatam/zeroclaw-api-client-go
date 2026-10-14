@@ -11,6 +11,11 @@ Changes since the last tag. They become the release notes of the next version.
   sony/gobreaker) and client-side rate limit (`WithRateLimit`,
   x/time/rate); retries with jitter that honor `Retry-After`.
 
+## Fixes
+
+- v0.1.1 retracts v0.1.0, which shipped a file that does not belong to the
+  module. The code is the same.
+
 ## Breaking Changes
 
 None.
