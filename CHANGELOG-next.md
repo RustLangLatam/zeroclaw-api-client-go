@@ -13,6 +13,9 @@ Changes since the last tag. They become the release notes of the next version.
 
 ## Fixes
 
+- v0.1.2: the README shows the official Go gopher (designed by Renée French,
+  CC BY 4.0) instead of an emoji. No code change.
+
 - v0.1.1 retracts v0.1.0, which shipped a file that does not belong to the
   module. The code is the same.
 

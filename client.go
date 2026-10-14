@@ -18,7 +18,7 @@ import (
 )
 
 // Version is the SDK version, sent in the User-Agent header.
-const Version = "0.1.1"
+const Version = "0.1.2"
 
 // DefaultTimeout is how long a request waits for the gateway's answer (its
 // headers: a streamed body is not bounded) unless [WithTimeout] says
