@@ -35,9 +35,7 @@
 
 `zeroclaw-api-client-go` is a typed, resilient Go client for the
 [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw) gateway: its HTTP API,
-its Server-Sent Events stream and its WebSocket chat. It is the Go port of
-[zeroclaw-api-client-rust](https://github.com/RustLangLatam/zeroclaw-api-client-rust),
-with the same surface, behavior and tests.
+its Server-Sent Events stream and its WebSocket chat.
 
 > An independent, community-maintained client. It is not affiliated with or
 > endorsed by ZeroClaw Labs; ZeroClaw is a trademark of ZeroClaw Labs.
@@ -257,6 +255,15 @@ verified against and the routes that need a newer one.
 - The API: [pkg.go.dev/github.com/RustLangLatam/zeroclaw-api-client-go](https://pkg.go.dev/github.com/RustLangLatam/zeroclaw-api-client-go).
 - The book: `mdbook serve docs/book` — getting started, guides, reference,
   architecture and decisions.
+
+## Other languages
+
+The same client, with the same surface, behavior and tests:
+
+| Language | Repository | Install |
+|---|---|---|
+| Rust | [zeroclaw-api-client-rust](https://github.com/RustLangLatam/zeroclaw-api-client-rust) | `cargo add zeroclaw-api-client` |
+| Python | [zeroclaw-api-client-python](https://github.com/RustLangLatam/zeroclaw-api-client-python) | `pip install zeroclaw-api-client` |
 
 ## Contributing
 
