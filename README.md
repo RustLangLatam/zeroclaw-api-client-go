@@ -1,4 +1,4 @@
-<h1 align="center">🐹 zeroclaw-api-client-go</h1>
+<h1 align="center"><img src="docs/assets/gopher.svg" alt="Go gopher" height="40" align="absmiddle" /> zeroclaw-api-client-go</h1>
 
 <p align="center">
   <strong>Your ZeroClaw, from Go. Typed calls, live streams, resilient by default.</strong>
@@ -267,3 +267,8 @@ Work happens on branches with pull requests to `main`; see
 
 Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
 [MIT license](LICENSE-MIT), at your option.
+
+The Go gopher (`docs/assets/gopher.svg`) was designed by
+[Renée French](https://reneefrench.blogspot.com/) and is licensed under
+[Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/);
+the artwork comes from [golang/website](https://github.com/golang/website).
