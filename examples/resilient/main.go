@@ -1,6 +1,8 @@
 // Command resilient shows a client tuned for an unreliable network: a short
-// answer timeout, five retries with backoff, at most four requests in
-// flight, and a middleware of its own that times every request.
+// answer timeout, five retries with jittered backoff, at most four requests
+// in flight, ten requests per second, a circuit breaker that stops calling a
+// gateway that keeps failing, and a middleware of its own that times every
+// request.
 //
 //	ZEROCLAW_URL=… ZEROCLAW_TOKEN=… go run ./examples/resilient
 package main
@@ -16,6 +18,8 @@ import (
 	"time"
 
 	zeroclaw "github.com/RustLangLatam/zeroclaw-api-client-go"
+	"github.com/sony/gobreaker/v2"
+	"golang.org/x/time/rate"
 )
 
 // timed is the outermost middleware: it sees each call once, retries
@@ -33,8 +37,15 @@ func main() {
 	client, err := zeroclaw.New(gatewayURL(),
 		zeroclaw.WithToken(os.Getenv("ZEROCLAW_TOKEN")),
 		zeroclaw.WithTimeout(10*time.Second),
-		zeroclaw.WithRetry(zeroclaw.RetryPolicy{MaxRetries: 5, BaseDelay: 250 * time.Millisecond, MaxDelay: 8 * time.Second}),
+		zeroclaw.WithRetry(zeroclaw.RetryPolicy{MaxRetries: 5, BaseDelay: 250 * time.Millisecond, MaxDelay: 8 * time.Second, Jitter: true}),
 		zeroclaw.WithConcurrencyLimit(4),
+		zeroclaw.WithRateLimit(rate.Limit(10), 10),
+		zeroclaw.WithCircuitBreaker(gobreaker.Settings{
+			Timeout: 15 * time.Second,
+			OnStateChange: func(_ string, from, to gobreaker.State) {
+				fmt.Fprintf(os.Stderr, "  circuit %s -> %s\n", from, to)
+			},
+		}),
 		zeroclaw.WithMiddleware(timed),
 	)
 	if err != nil {
@@ -46,6 +57,8 @@ func main() {
 	switch {
 	case err == nil:
 		fmt.Printf("ZeroClaw %s up %ds\n", status.Version, status.UptimeSeconds)
+	case errors.Is(err, zeroclaw.ErrCircuitOpen):
+		fmt.Println("the gateway keeps failing; not calling it for now:", err)
 	case errors.Is(err, zeroclaw.ErrTimeout):
 		fmt.Println("no answer even after retries:", err)
 	case zeroclaw.IsTransient(err):

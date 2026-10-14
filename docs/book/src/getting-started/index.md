@@ -15,8 +15,10 @@ import zeroclaw "github.com/RustLangLatam/zeroclaw-api-client-go"
 ```
 
 It needs Go 1.23 or newer
-([why](../architecture/decisions/ADR-003-go-floor.md)) and brings one
-dependency, `github.com/coder/websocket`.
+([why](../architecture/decisions/ADR-003-go-floor.md)) and brings three
+well-established dependencies: `github.com/coder/websocket` (chat and
+feeds), `golang.org/x/time/rate` (the optional rate limit) and
+`github.com/sony/gobreaker/v2` (the optional circuit breaker).
 
 ## What you need from the gateway
 

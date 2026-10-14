@@ -12,6 +12,9 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/sony/gobreaker/v2"
+	"golang.org/x/time/rate"
 )
 
 // Version is the SDK version, sent in the User-Agent header.
@@ -57,6 +60,8 @@ type settings struct {
 	concurrency int
 	middleware  []Middleware
 	transport   http.RoundTripper
+	limiter     *rate.Limiter
+	breaker     *gobreaker.Settings
 }
 
 // WithToken sets the bearer token sent with every request (obtained by
@@ -79,6 +84,24 @@ func WithRetry(p RetryPolicy) Option { return func(s *settings) { s.retry = p } 
 // and their backoff included; reading a body (an open event stream) holds
 // none.
 func WithConcurrencyLimit(max int) Option { return func(s *settings) { s.concurrency = max } }
+
+// WithRateLimit keeps the client under r requests per second with bursts
+// of up to burst, shared by every copy of the client. Every attempt, retries
+// included, waits for its turn; a wait that would outlast the caller's
+// deadline fails at once with [ErrRateLimited].
+func WithRateLimit(r rate.Limit, burst int) Option {
+	return func(s *settings) { s.limiter = rate.NewLimiter(r, burst) }
+}
+
+// WithCircuitBreaker stops calling a gateway that keeps failing: once
+// ReadyToTrip says so (by default after 5 failures in a row), calls fail at
+// once with [ErrCircuitOpen] until Timeout (default 30 s) has passed and a
+// trial call works. A transport error, a 5xx, 408 or 429 count as failures;
+// the caller's own cancellations do not. The breaker is shared by every copy
+// of the client, and sees one logical call (its retries included).
+func WithCircuitBreaker(st gobreaker.Settings) Option {
+	return func(s *settings) { s.breaker = &st }
+}
 
 // WithMiddleware wraps every HTTP request in middleware of your own
 // (metrics, tracing, request signing, a circuit breaker, …). Middleware
@@ -120,7 +143,7 @@ func New(baseURL string, opts ...Option) (*Client, error) {
 		s.transport = t
 	}
 	return &Client{
-		http:    &http.Client{Transport: stack(s.transport, s.timeout, s.retry, s.concurrency, s.middleware)},
+		http:    &http.Client{Transport: stack(s.transport, &s)},
 		ws:      &http.Client{Transport: s.transport},
 		base:    base,
 		token:   s.token,

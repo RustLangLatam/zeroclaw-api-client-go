@@ -23,7 +23,7 @@ The gateway is the source of truth for every request and response shape. This SD
 1. Read the owning file, its tests, and the matching gateway handler before editing.
 2. One resource group per file (`cron.go`, `config.go`, …), reached from a `Client` accessor; path segments go through `Client.url`, never string formatting, so ids are always encoded.
 3. Keep one concern per PR. Avoid unrelated cleanup and do not mix broad formatting changes with functional changes.
-4. Do not add dependencies for minor convenience, speculative abstractions, or options without a concrete use. The only dependency is `github.com/coder/websocket`.
+4. Do not add dependencies for minor convenience, speculative abstractions, or options without a concrete use. The dependencies are `github.com/coder/websocket`, `golang.org/x/time` and `github.com/sony/gobreaker/v2` ([ADR-005](docs/book/src/architecture/decisions/ADR-005-resilience-dependencies.md)); a new one needs an ADR.
 5. Every endpoint gets a test at the HTTP boundary (`<area>_test.go`, against the mock gateway of `gateway_test.go`) that checks method, path, query, body, and decoding. Logic (parsing, mapping, decisions) gets table-driven tests: a list of inputs and expected outputs, one assertion loop. New response types get a captured vector (`scripts/capture-vectors.py`).
 6. Work on a non-`main` branch (`feat/*`, `fix/*`, `docs/*`), open a PR to `main`, and never push directly to `main`. Releases are tagged `vX.Y.Z` from `main`; the Go module proxy and pkg.go.dev pick the tag up.
 7. Use conventional commits.

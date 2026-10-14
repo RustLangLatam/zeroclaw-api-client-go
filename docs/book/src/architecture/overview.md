@@ -9,12 +9,13 @@ gateway.
 one transport (its connection pool): one sends through the resilience stack,
 the other carries WebSocket handshakes. `zeroclaw.New` takes options
 (`WithToken`, `WithTimeout`, `WithRetry`, `WithConcurrencyLimit`,
-`WithMiddleware`, `WithTransport`). A `*Client` is safe for concurrent use;
+`WithRateLimit`, `WithCircuitBreaker`, `WithMiddleware`, `WithTransport`). A `*Client` is safe for concurrent use;
 `WithToken` returns a copy that shares the pool and the concurrency limit.
 
 Requests are sent through a stack of `http.RoundTripper`s (`transport.go`,
 [ADR-004](./decisions/ADR-004-roundtripper-stack.md)): the caller's
-middleware, an optional concurrency limit, retry and a deadline, around
+middleware, an optional circuit breaker, an optional concurrency limit,
+retry, an optional rate limit and a deadline, around
 `http.Transport`. All HTTP goes through a few unexported helpers in
 `client.go`:
 

@@ -19,9 +19,12 @@ the client becomes one of theirs too.
 ## Decision
 
 `go.mod` declares `go 1.23`, and CI tests on Go 1.23 and on the latest
-stable release. The client has one dependency, `github.com/coder/websocket`,
-for the WebSocket chat and feeds; everything else is the standard library
-(`net/http`, `crypto/tls`, `encoding/json`).
+stable release. The client's dependencies are
+`github.com/coder/websocket` (WebSocket chat and feeds),
+`golang.org/x/time` (rate limit) and `github.com/sony/gobreaker/v2`
+(circuit breaker), all pure Go and building on 1.23
+([ADR-005](./ADR-005-resilience-dependencies.md)); everything else is the
+standard library (`net/http`, `crypto/tls`, `encoding/json`).
 
 ## Consequences
 

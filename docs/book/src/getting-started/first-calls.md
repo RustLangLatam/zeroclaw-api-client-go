@@ -74,7 +74,7 @@ The module ships runnable examples under `examples/`:
 | `events` | following the live event stream, reconnecting |
 | `chat` | streaming an agent's reply over the WebSocket |
 | `announce` | posting on a channel through a one-off cron job |
-| `resilient` | timeouts, retries, a concurrency limit and a custom middleware |
+| `resilient` | timeouts, retries, rate limit, circuit breaker, concurrency limit and a custom middleware |
 
 ```sh
 ZEROCLAW_URL=http://127.0.0.1:42617 ZEROCLAW_TOKEN=zc_… \

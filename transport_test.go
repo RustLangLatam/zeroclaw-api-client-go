@@ -123,3 +123,53 @@ func TestRetriedRequestsResendTheirBody(t *testing.T) {
 		}
 	}
 }
+
+func TestJitteredWaitsStayInTheUpperHalf(t *testing.T) {
+	p := RetryPolicy{MaxRetries: 5, BaseDelay: 100 * time.Millisecond, MaxDelay: time.Second, Jitter: true}
+	for attempt := range 5 {
+		full := p.Delay(attempt)
+		for range 100 {
+			if w := p.wait(attempt, nil); w < full/2 || w > full {
+				t.Fatalf("attempt %d: %v outside [%v, %v]", attempt, w, full/2, full)
+			}
+		}
+	}
+	if !DefaultRetryPolicy().Jitter {
+		t.Error("the default policy has no jitter")
+	}
+}
+
+func TestRetryAfterVectors(t *testing.T) {
+	now := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
+	answer := func(status int, header string) *http.Response {
+		h := http.Header{}
+		if header != "" {
+			h.Set("Retry-After", header)
+		}
+		return &http.Response{StatusCode: status, Header: h}
+	}
+	vectors := []struct {
+		resp *http.Response
+		want time.Duration
+	}{
+		{answer(429, "3"), 3 * time.Second},
+		{answer(503, "1"), time.Second},
+		{answer(503, now.Add(2*time.Second).Format(http.TimeFormat)), 2 * time.Second},
+		{answer(503, now.Add(-time.Second).Format(http.TimeFormat)), 0},
+		{answer(502, "3"), 0},
+		{answer(429, ""), 0},
+		{answer(429, "soon"), 0},
+		{answer(429, "-1"), 0},
+		{nil, 0},
+	}
+	for _, v := range vectors {
+		if got := retryAfter(v.resp, now); got != v.want {
+			t.Errorf("%v: %v, want %v", v.resp, got, v.want)
+		}
+	}
+	// Honored, but never beyond MaxDelay.
+	p := RetryPolicy{BaseDelay: time.Millisecond, MaxDelay: 2 * time.Second}
+	if got := p.wait(0, answer(429, "60")); got != 2*time.Second {
+		t.Errorf("capped wait %v", got)
+	}
+}

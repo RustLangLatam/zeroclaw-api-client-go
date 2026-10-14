@@ -4,7 +4,13 @@ Every HTTP request goes through a stack of `http.RoundTripper`s
 (`transport.go`). From your code to the network:
 
 ```text
-your middleware → concurrency limit → retry → deadline → http.Transport → gateway
+your middleware → circuit breaker → concurrency limit → retry → rate limit → deadline → http.Transport → gateway
+```
+
+The circuit breaker and the rate limit are off unless you turn them on.
+
+```text
+with neither: your middleware → concurrency limit → retry → deadline → http.Transport
 ```
 
 ## Timeouts
@@ -39,9 +45,16 @@ A failed request is tried again when **both** hold:
   409, …) and a 500 are returned at once.
 
 `RetryPolicy` sets how many retries and how far apart: retry `n` waits
-`BaseDelay × 2ⁿ`, capped at `MaxDelay`. The default
-(`zeroclaw.DefaultRetryPolicy()`) is three retries, 200 ms doubling to 5 s
-(200, 400, 800 ms). `zeroclaw.NoRetries()` turns them off.
+`BaseDelay × 2ⁿ`, capped at `MaxDelay`. With `Jitter`, each wait is a random
+point between half and all of that delay, so clients that failed together
+(the gateway restarted under all of them) do not come back together. The
+default (`zeroclaw.DefaultRetryPolicy()`) is three retries, 200 ms doubling
+to 5 s (about 200, 400, 800 ms), with jitter. `zeroclaw.NoRetries()` turns
+them off.
+
+When a 429 or 503 carries a `Retry-After` header (seconds or an HTTP date),
+the client waits that long instead, when it is longer than the backoff, but
+never beyond `MaxDelay`.
 
 ```go
 client, err := zeroclaw.New("http://127.0.0.1:42617",
@@ -70,12 +83,65 @@ retries and their backoff included; reading a body afterwards (an open event
 stream) holds none. Every copy of the client (`WithToken`) shares the limit,
 so one setting protects the gateway from a whole application.
 
+## Rate limit
+
+`zeroclaw.WithRateLimit(r, burst)` keeps the client under `r` requests per
+second, with bursts of up to `burst`, using a token bucket from
+[`golang.org/x/time/rate`](https://pkg.go.dev/golang.org/x/time/rate).
+Every attempt waits for a token, retries included, so the client stays
+under the gateway's own limits instead of collecting 429s. The limit is
+shared by every copy of the client. A wait that would outlast the `ctx`
+deadline fails at once, without sending anything, with
+`zeroclaw.ErrRateLimited` (`IsRateLimited` and `IsTransient` say yes).
+
+```go
+client, err := zeroclaw.New("http://127.0.0.1:42617",
+	zeroclaw.WithToken("zc_…"),
+	zeroclaw.WithRateLimit(rate.Limit(10), 20), // 10 per second, bursts of 20
+)
+if err != nil {
+	return err
+}
+```
+
+## Circuit breaker
+
+`zeroclaw.WithCircuitBreaker(settings)` stops calling a gateway that keeps
+failing, with [`github.com/sony/gobreaker/v2`](https://pkg.go.dev/github.com/sony/gobreaker/v2).
+A transport error, a timeout, a 5xx, a 408 or a 429 count as failures; a
+404 or another answer about the request does not, and neither does the
+caller cancelling its own `ctx`. After `ReadyToTrip` says so (by default 5
+failures in a row) the breaker opens: calls fail at once with
+`zeroclaw.ErrCircuitOpen`, without reaching the gateway, for `Timeout`
+(default 30 s). Then it lets `MaxRequests` trial calls through (default 1);
+if they work, it closes again. The breaker sits outside the retries, so it
+counts one failure per call, not per attempt, and every copy of the client
+shares it.
+
+```go
+client, err := zeroclaw.New("http://127.0.0.1:42617",
+	zeroclaw.WithToken("zc_…"),
+	zeroclaw.WithCircuitBreaker(gobreaker.Settings{
+		Timeout: 10 * time.Second,
+		OnStateChange: func(name string, from, to gobreaker.State) {
+			log.Printf("gateway circuit %s → %s", from, to)
+		},
+	}),
+)
+if err != nil {
+	return err
+}
+```
+
+`errors.Is(err, zeroclaw.ErrCircuitOpen)` tells a refusal of the breaker
+apart from a gateway answer; `IsTransient` says yes to both.
+
 ## Your own middleware
 
 `zeroclaw.WithMiddleware` wraps every request in any
 `zeroclaw.Middleware`, a `func(next http.RoundTripper) http.RoundTripper`:
-metrics, tracing, request signing, a circuit breaker, a rate limiter of your
-own. `zeroclaw.RoundTripperFunc` adapts a function to `http.RoundTripper`.
+metrics, tracing (for example `otelhttp.NewTransport` from OpenTelemetry),
+request signing. `zeroclaw.RoundTripperFunc` adapts a function to `http.RoundTripper`.
 Middleware added first is outermost: it sees each call once, with the
 client's retries inside it.
 

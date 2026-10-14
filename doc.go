@@ -11,9 +11,11 @@
 //	port, err := client.Config().Get(ctx, "gateway.port")
 //
 // Every HTTP request goes through a transport stack: an answer timeout that
-// never cuts a stream, retries with backoff for idempotent calls, an
-// optional concurrency limit and any [Middleware] of your own (see
-// [WithMiddleware]).
+// never cuts a stream, retries with jittered backoff for idempotent calls
+// that honor Retry-After, and, opt-in, a circuit breaker
+// ([WithCircuitBreaker]), a client-side rate limit ([WithRateLimit]), a
+// concurrency limit ([WithConcurrencyLimit]) and any [Middleware] of your
+// own ([WithMiddleware]).
 //
 // Errors are typed: a gateway refusal is an [*APIError] that keeps its
 // status and the gateway's own message; [IsNotFound], [IsUnauthorized],

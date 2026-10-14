@@ -13,6 +13,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/sony/gobreaker/v2"
+	"golang.org/x/time/rate"
 )
 
 func fastRetries(max int) Option {
@@ -268,5 +271,84 @@ func TestADroppedConnectionWithoutRetriesIsTransient(t *testing.T) {
 	client, _ := New(base, WithRetry(NoRetries()))
 	if _, err := client.Config().MapKeys(context.Background(), "agents"); err == nil || !IsTransient(err) {
 		t.Fatalf("%v", err)
+	}
+}
+
+func TestRetryAfterIsHonored(t *testing.T) {
+	g, client := gateway(t, WithRetry(RetryPolicy{MaxRetries: 1, BaseDelay: time.Millisecond, MaxDelay: 300 * time.Millisecond}))
+	var calls atomic.Int32
+	g.on("GET", "/api/config/map-keys", func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.Header().Set("Retry-After", "1")
+			replyStatus(503, `{"error":"reloading"}`)(w, r)
+			return
+		}
+		reply(`{"keys":[]}`)(w, r)
+	})
+	start := time.Now()
+	if _, err := client.Config().MapKeys(context.Background(), "agents"); err != nil {
+		t.Fatal(err)
+	}
+	// Retry-After: 1, capped at the policy's 300 ms instead of 1 ms.
+	if d := time.Since(start); d < 250*time.Millisecond || d > time.Second {
+		t.Errorf("retried after %v", d)
+	}
+}
+
+func TestTheCircuitBreakerStopsCallingAFailingGateway(t *testing.T) {
+	g, client := gateway(t, WithRetry(NoRetries()), WithCircuitBreaker(gobreaker.Settings{Timeout: time.Hour}))
+	g.on("GET", "/api/config/map-keys", replyStatus(503, `{"error":"down"}`))
+	ctx := context.Background()
+	for range 5 {
+		if _, err := client.Config().MapKeys(ctx, "agents"); StatusCode(err) != 503 {
+			t.Fatalf("%v", err)
+		}
+	}
+	_, err := client.Config().MapKeys(ctx, "agents")
+	if !errors.Is(err, ErrCircuitOpen) || !IsTransient(err) {
+		t.Fatalf("%v", err)
+	}
+	if n := g.calls("GET", "/api/config/map-keys"); n != 5 {
+		t.Errorf("%d calls reached the gateway", n)
+	}
+}
+
+func TestNotFoundDoesNotTripTheBreaker(t *testing.T) {
+	g, client := gateway(t, WithCircuitBreaker(gobreaker.Settings{}))
+	g.on("GET", "/api/config/prop", replyStatus(404, `{"error":"no field"}`))
+	for range 8 {
+		if _, err := client.Config().Get(context.Background(), "x"); !IsNotFound(err) {
+			t.Fatalf("%v", err)
+		}
+	}
+}
+
+func TestTheRateLimitSpacesCalls(t *testing.T) {
+	g, client := gateway(t, WithRateLimit(rate.Every(50*time.Millisecond), 1))
+	g.on("GET", "/api/config/map-keys", reply(`{"keys":[]}`))
+	start := time.Now()
+	for range 4 {
+		if _, err := client.Config().MapKeys(context.Background(), "agents"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if d := time.Since(start); d < 140*time.Millisecond {
+		t.Errorf("4 calls at 20/s took %v", d)
+	}
+}
+
+func TestAWaitPastTheDeadlineFailsAtOnce(t *testing.T) {
+	g, client := gateway(t, WithRateLimit(rate.Every(time.Hour), 1))
+	g.on("GET", "/api/config/map-keys", reply(`{"keys":[]}`))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client.Config().MapKeys(ctx, "agents") // spends the only token
+	start := time.Now()
+	_, err := client.Config().MapKeys(ctx, "agents")
+	if !errors.Is(err, ErrRateLimited) || !IsRateLimited(err) || !IsTransient(err) || time.Since(start) > 100*time.Millisecond {
+		t.Fatalf("%v after %v", err, time.Since(start))
+	}
+	if n := g.calls("GET", "/api/config/map-keys"); n != 1 {
+		t.Errorf("%d calls", n)
 	}
 }

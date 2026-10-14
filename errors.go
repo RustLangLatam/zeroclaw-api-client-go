@@ -28,6 +28,15 @@ var (
 
 	// ErrWebSocket means a WebSocket connection to the gateway failed.
 	ErrWebSocket = errors.New("websocket error")
+
+	// ErrCircuitOpen means the circuit breaker ([WithCircuitBreaker])
+	// refused the call because the gateway kept failing; it was not sent.
+	ErrCircuitOpen = errors.New("circuit breaker is open")
+
+	// ErrRateLimited means the client's own rate limit ([WithRateLimit])
+	// could not let the call through before the caller's deadline; it was
+	// not sent.
+	ErrRateLimited = errors.New("client rate limit exceeded")
 )
 
 // APIError is a gateway answer with a non-success status.
@@ -80,8 +89,9 @@ func IsUnauthorized(err error) bool {
 	return s == 401 || s == 403
 }
 
-// IsRateLimited reports whether the gateway rate-limited the call (429).
-func IsRateLimited(err error) bool { return StatusCode(err) == 429 }
+// IsRateLimited reports whether the gateway rate-limited the call (429), or
+// the client's own rate limit held it back ([ErrRateLimited]).
+func IsRateLimited(err error) bool { return StatusCode(err) == 429 || errors.Is(err, ErrRateLimited) }
 
 // IsTransient reports whether the call may work if made again later: no
 // connection, a connection dropped before the answer, a timeout, or a "try
@@ -91,7 +101,9 @@ func IsTransient(err error) bool {
 	if s := StatusCode(err); s != 0 {
 		return isRetryableStatus(s)
 	}
-	return isRetryableError(err)
+	// The client's own refusals pass with time, but retrying them inside
+	// the call would not help.
+	return errors.Is(err, ErrCircuitOpen) || errors.Is(err, ErrRateLimited) || isRetryableError(err)
 }
 
 // newAPIError builds an [*APIError] from a failed response's status and body.

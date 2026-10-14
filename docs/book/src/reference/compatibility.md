@@ -38,5 +38,7 @@ and on the latest stable release.
 
 The client uses the standard library's `net/http` and `crypto/tls`, so it
 needs no cgo and no system OpenSSL. WebSockets use
-[`github.com/coder/websocket`](https://github.com/coder/websocket), its one
-dependency.
+[`github.com/coder/websocket`](https://github.com/coder/websocket); the
+optional rate limit and circuit breaker use
+[`golang.org/x/time/rate`](https://pkg.go.dev/golang.org/x/time/rate) and
+[`github.com/sony/gobreaker/v2`](https://github.com/sony/gobreaker).

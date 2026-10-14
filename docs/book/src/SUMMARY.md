@@ -23,5 +23,6 @@
     - [ADR-002: Dynamic shapes stay JSON](./architecture/decisions/ADR-002-dynamic-shapes-stay-json.md)
     - [ADR-003: Go 1.23 floor](./architecture/decisions/ADR-003-go-floor.md)
     - [ADR-004: Requests go through a RoundTripper stack](./architecture/decisions/ADR-004-roundtripper-stack.md)
+    - [ADR-005: Proven packages for rate limiting and circuit breaking](./architecture/decisions/ADR-005-resilience-dependencies.md)
 - [Contributing](./contributing/architecture.md)
   - [Testing](./contributing/testing.md)

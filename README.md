@@ -125,10 +125,12 @@ event and chat surface from Go.
   | `Webhook()`, `WebAuthn()` | one-shot webhook and A2A messages; hardware-key ceremonies |
 
 - **Resilient by default**, built as a stack of `http.RoundTripper`s:
-  answer timeouts that never cut a stream, retries with exponential backoff
-  for idempotent calls only, an optional shared concurrency limit, and your
-  own middleware (metrics, tracing, signing, circuit breaking) around every
-  request.
+  answer timeouts that never cut a stream, retries with jittered exponential
+  backoff for idempotent calls only that honor `Retry-After`, and, opt-in, a
+  circuit breaker ([sony/gobreaker](https://github.com/sony/gobreaker)), a
+  client-side rate limit ([x/time/rate](https://pkg.go.dev/golang.org/x/time/rate))
+  and a shared concurrency limit; plus your own middleware (metrics,
+  tracing, signing) around every request.
 - **Typed errors**: a gateway refusal is an `*APIError` that keeps its
   status, its explanation and its JSON body; `IsNotFound`, `IsUnauthorized`,
   `IsRateLimited` and `IsTransient` classify any error, and sentinels
@@ -142,8 +144,10 @@ event and chat surface from Go.
 - **Safe by construction**: every path segment is percent-encoded, the token
   never appears in formatted output (`%v`, `%+v`, `%#v`), nothing is printed
   or logged.
-- **One dependency**: [coder/websocket](https://github.com/coder/websocket)
-  for the chat; everything else is the standard library.
+- **Few, proven dependencies**: [coder/websocket](https://github.com/coder/websocket)
+  for the chat, [golang.org/x/time/rate](https://pkg.go.dev/golang.org/x/time/rate)
+  and [sony/gobreaker](https://github.com/sony/gobreaker) for resilience;
+  everything else is the standard library.
 
 ## Technologies
 
@@ -151,7 +155,9 @@ event and chat surface from Go.
 |---|---|
 | Language | Go 1.23+ |
 | HTTP | `net/http` (TLS from `crypto/tls`, no cgo) |
-| Middleware | `http.RoundTripper` stack: deadline, retry, concurrency limit, your own `Middleware` |
+| Middleware | `http.RoundTripper` stack: deadline, rate limit, retry (jitter, `Retry-After`), concurrency limit, circuit breaker, your own `Middleware` |
+| Rate limiting | [golang.org/x/time/rate](https://pkg.go.dev/golang.org/x/time/rate) token bucket |
+| Circuit breaking | [sony/gobreaker/v2](https://github.com/sony/gobreaker) |
 | WebSockets | [coder/websocket](https://github.com/coder/websocket) (`zeroclaw.v1` subprotocol) |
 | Serialization | `encoding/json` |
 | Tests | `net/http/httptest` mock gateway, an in-test WebSocket gateway, captured response vectors, table-driven tests, benchmarks |
@@ -166,7 +172,7 @@ event and chat surface from Go.
     ▼
  Client ── resource accessors (Config, Channels, Chat, …) ── typed requests/responses
     │
-    ├─ HTTP ──► your middleware ─► concurrency limit ─► retry ─► deadline ─► http.Transport ─► gateway
+    ├─ HTTP ──► your middleware ─► circuit breaker ─► concurrency limit ─► retry ─► rate limit ─► deadline ─► http.Transport ─► gateway
     ├─ SSE ───► the same stack; the body is read as a stream of events
     └─ WebSocket ─► coder/websocket (chat, canvas and SOP-run feeds)
 ```
@@ -183,14 +189,19 @@ client, err := zeroclaw.New("http://127.0.0.1:42617",
 	zeroclaw.WithToken("zc_…"),
 	zeroclaw.WithTimeout(10*time.Second), // wait for an answer at most 10 s
 	zeroclaw.WithRetry(zeroclaw.RetryPolicy{MaxRetries: 5, BaseDelay: 250 * time.Millisecond, MaxDelay: 8 * time.Second}),
-	zeroclaw.WithConcurrencyLimit(4), // shared by every copy
+	zeroclaw.WithConcurrencyLimit(4),                // shared by every copy
+	zeroclaw.WithRateLimit(rate.Limit(10), 20),      // 10 requests/s, bursts of 20
+	zeroclaw.WithCircuitBreaker(gobreaker.Settings{}), // open after 5 failures in a row, for 30 s
 	zeroclaw.WithMiddleware(func(next http.RoundTripper) http.RoundTripper { return next }),
 )
 ```
 
 Retries apply to `GET`, `HEAD`, `OPTIONS`, `PUT` and `DELETE` after a
 connection failure, a connection dropped before the answer, a timeout, or a
-408, 429, 502, 503 or 504. A `POST` or `PATCH` is never repeated. The
+408, 429, 502, 503 or 504, with jittered backoff and the gateway's
+`Retry-After` honored. A `POST` or `PATCH` is never repeated. An open
+breaker fails calls at once with `ErrCircuitOpen`; the rate limit fails a
+wait past the deadline with `ErrRateLimited`. The
 timeout bounds the wait for the answer's headers, so the event stream stays
 open. See the [resilience guide](docs/book/src/guides/resilience.md).
 
@@ -207,7 +218,7 @@ Runnable programs under `examples/`:
 | `events` | following the live event stream, reconnecting |
 | `chat` | streaming an agent's reply over the WebSocket |
 | `announce` | posting on a channel through a one-off cron job |
-| `resilient` | timeouts, retries, a concurrency limit and a custom middleware |
+| `resilient` | timeouts, retries, rate limit, circuit breaker, concurrency limit and a custom middleware |
 
 ```sh
 ZEROCLAW_URL=http://127.0.0.1:42617 ZEROCLAW_TOKEN=zc_… go run ./examples/status
