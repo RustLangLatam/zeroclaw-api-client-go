@@ -1,0 +1,165 @@
+# Endpoint map
+
+Every gateway route the client calls, with the file and function that call
+it. The table is generated from the code: each exported method's doc comment
+names its route, and `scripts/endpoint-map.py` collects them.
+
+Routes the client deliberately does not call:
+
+- inbound webhooks (`/whatsapp`, `/linq/{alias}`, `/nextcloud-talk/{alias}`,
+  `/webhook/gmail`, the coding-agent hook under `/hooks/`, and the SOP trigger ingress
+  `/sop/{path}`): providers and external systems call them, not clients;
+- `/api/plugins`, which only a `plugins-wasm` build has: not covered yet;
+- the bundled web UI (`/_app/*`) and the HTML API explorer (`/api/docs`);
+- the daemon's own protocols: `/acp` (zerocode) and `/ws/nodes` (nodes).
+
+| Method | Path | File | Function |
+|---|---|---|---|
+| `POST` | `/a2a/{alias}` | `webhook.go` | `WebhookAPI.A2ASend` |
+| `GET` | `/a2a/{alias}/.well-known/agent-card.json` | `webhook.go` | `WebhookAPI.AgentCard` |
+| `GET` | `/admin/paircode` | `pairing.go` | `PairingAPI.AdminCode` |
+| `POST` | `/admin/paircode/new` | `pairing.go` | `PairingAPI.AdminNewCode` |
+| `POST` | `/admin/reload` | `system.go` | `SystemAPI.Reload` |
+| `POST` | `/admin/shutdown` | `system.go` | `SystemAPI.Shutdown` |
+| `POST` | `/admin/sop/approve` | `sops.go` | `SopsAPI.Approve` |
+| `POST` | `/admin/sop/deny` | `sops.go` | `SopsAPI.Deny` |
+| `GET` | `/admin/sop/pending` | `sops.go` | `SopsAPI.Pending` |
+| `GET` | `/api/agents/{alias}/skills` | `agents.go` | `AgentAPI.Skills` |
+| `GET` | `/api/agents/{alias}/workspace/list` | `agents.go` | `AgentAPI.ListFiles` |
+| `POST` | `/api/agents/{alias}/workspace/mkdir` | `agents.go` | `AgentAPI.MakeDir` |
+| `POST` | `/api/agents/{alias}/workspace/move` | `agents.go` | `AgentAPI.MovePath` |
+| `DELETE` | `/api/agents/{alias}/workspace/path` | `agents.go` | `AgentAPI.RemovePath` |
+| `GET` | `/api/agents/{alias}/workspace/read` | `agents.go` | `AgentAPI.ReadFile` |
+| `GET` | `/api/browse` | `files.go` | `FilesAPI.List` |
+| `POST` | `/api/browse/mkdir` | `files.go` | `FilesAPI.MakeDir` |
+| `DELETE` | `/api/browse/rmdir` | `files.go` | `FilesAPI.RemoveDir` |
+| `GET` | `/api/canvas` | `canvas.go` | `CanvasAPI.List` |
+| `DELETE` | `/api/canvas/{id}` | `canvas.go` | `CanvasAPI.Clear` |
+| `GET` | `/api/canvas/{id}` | `canvas.go` | `CanvasAPI.Current` |
+| `POST` | `/api/canvas/{id}` | `canvas.go` | `CanvasAPI.Publish` |
+| `GET` | `/api/canvas/{id}/history` | `canvas.go` | `CanvasAPI.History` |
+| `GET` | `/api/channels` | `channels.go` | `ChannelsAPI.List` |
+| `POST` | `/api/channels/bind` | `channels.go` | `ChannelsAPI.Bind` |
+| `POST` | `/api/channels/{channel}/relink.` | `channels.go` | `ChannelsAPI.Relink` |
+| `GET` | `/api/channels/{channel}/rooms` | `channels.go` | `ChannelsAPI.Rooms` |
+| `POST` | `/api/channels/{channel}/rooms.` | `channels.go` | `ChannelsAPI.CreateRoom` |
+| `POST` | `/api/channels/{channel}/rooms/{room}/invites` | `channels.go` | `ChannelsAPI.Invite` |
+| `GET` | `/api/channels/{channel}/rooms/{room}/members` | `channels.go` | `ChannelsAPI.RoomMembers` |
+| `DELETE` | `/api/channels/{channel}/rooms/{room}/members/{user}` | `channels.go` | `ChannelsAPI.RemoveMember` |
+| `POST` | `/api/channels/{channel}/send` | `channels.go` | `ChannelsAPI.Send` |
+| `GET` | `/api/cli-tools` | `system.go` | `SystemAPI.CLITools` |
+| `GET` | `/api/config` | `config.go` | `ConfigAPI.Snapshot` |
+| `OPTIONS` | `/api/config` | `config.go` | `ConfigAPI.Schema` |
+| `PATCH` | `/api/config` | `config.go` | `ConfigAPI.Patch` |
+| `GET` | `/api/config/agent-options` | `config.go` | `ConfigAPI.AgentOptions` |
+| `GET` | `/api/config/catalog` | `config.go` | `ConfigAPI.Catalog` |
+| `GET` | `/api/config/catalog/models` | `config.go` | `ConfigAPI.CatalogModels` |
+| `GET` | `/api/config/delete-plan` | `config.go` | `ConfigAPI.DeletePlan` |
+| `GET` | `/api/config/drift` | `config.go` | `ConfigAPI.Drift` |
+| `POST` | `/api/config/init` | `config.go` | `ConfigAPI.Init` |
+| `GET` | `/api/config/list` | `config.go` | `ConfigAPI.List` |
+| `DELETE` | `/api/config/map-key` | `config.go` | `ConfigAPI.DeleteMapKey` |
+| `POST` | `/api/config/map-key` | `config.go` | `ConfigAPI.CreateMapKey` |
+| `GET` | `/api/config/map-keys` | `config.go` | `ConfigAPI.MapKeys` |
+| `POST` | `/api/config/migrate` | `config.go` | `ConfigAPI.Migrate` |
+| `POST` | `/api/config/model-providers/{type}/{alias}/refresh-context-window` | `config.go` | `ConfigAPI.RefreshContextWindow` |
+| `DELETE` | `/api/config/prop` | `config.go` | `ConfigAPI.Reset` |
+| `GET` | `/api/config/prop` | `config.go` | `ConfigAPI.Get` |
+| `OPTIONS` | `/api/config/prop` | `config.go` | `ConfigAPI.PropSchema` |
+| `PUT` | `/api/config/prop` | `config.go` | `ConfigAPI.Set` |
+| `GET` | `/api/config/reload-status.` | `config.go` | `ConfigAPI.PendingReload` |
+| `POST` | `/api/config/rename-map-key` | `config.go` | `ConfigAPI.RenameMapKey` |
+| `GET` | `/api/config/resolve-alias-source` | `config.go` | `ConfigAPI.AliasValues` |
+| `GET` | `/api/config/sections` | `config.go` | `ConfigAPI.Sections` |
+| `GET` | `/api/config/sections/{section}` | `config.go` | `ConfigAPI.SectionItems` |
+| `POST` | `/api/config/sections/{section}/items/{key}` | `config.go` | `ConfigAPI.SelectSectionItem` |
+| `GET` | `/api/config/status` | `config.go` | `ConfigAPI.Status` |
+| `GET` | `/api/config/templates` | `config.go` | `ConfigAPI.Templates` |
+| `GET` | `/api/cost` | `cost.go` | `CostAPI.Agent` |
+| `GET` | `/api/cost` | `cost.go` | `CostAPI.Summary` |
+| `GET` | `/api/cron` | `cron.go` | `CronAPI.List` |
+| `POST` | `/api/cron` | `cron.go` | `CronAPI.Create` |
+| `GET` | `/api/cron/settings` | `cron.go` | `CronAPI.Settings` |
+| `PATCH` | `/api/cron/settings` | `cron.go` | `CronAPI.UpdateSettings` |
+| `DELETE` | `/api/cron/{id}` | `cron.go` | `CronAPI.Delete` |
+| `PATCH` | `/api/cron/{id}` | `cron.go` | `CronAPI.Update` |
+| `POST` | `/api/cron/{id}/run` | `cron.go` | `CronAPI.Run` |
+| `GET` | `/api/cron/{id}/runs` | `cron.go` | `CronAPI.Runs` |
+| `GET` | `/api/devices` | `pairing.go` | `PairingAPI.Devices` |
+| `POST` | `/api/devices/me/capabilities` | `pairing.go` | `PairingAPI.SetCapabilities` |
+| `DELETE` | `/api/devices/{id}` | `pairing.go` | `PairingAPI.RevokeDevice` |
+| `POST` | `/api/devices/{id}/token/rotate` | `pairing.go` | `PairingAPI.RotateDeviceToken` |
+| `POST` | `/api/doctor` | `system.go` | `SystemAPI.Doctor` |
+| `GET` | `/api/events` | `events.go` | `EventsAPI.Subscribe` |
+| `GET` | `/api/events/history.` | `events.go` | `EventsAPI.History` |
+| `GET` | `/api/health` | `system.go` | `SystemAPI.RuntimeHealth` |
+| `GET` | `/api/integrations` | `system.go` | `SystemAPI.Integrations` |
+| `GET` | `/api/integrations/settings` | `system.go` | `SystemAPI.IntegrationSettings` |
+| `GET` | `/api/logs` | `system.go` | `SystemAPI.Logs` |
+| `GET` | `/api/memory` | `memory.go` | `MemoryAPI.Search` |
+| `POST` | `/api/memory` | `memory.go` | `MemoryAPI.Store` |
+| `DELETE` | `/api/memory/{key}` | `memory.go` | `MemoryAPI.Forget` |
+| `GET` | `/api/openapi.json` | `system.go` | `SystemAPI.OpenAPI` |
+| `POST` | `/api/pair` | `pairing.go` | `PairingAPI.Pair` |
+| `POST` | `/api/pairing/initiate` | `pairing.go` | `PairingAPI.NewCode` |
+| `GET` | `/api/personality` | `agents.go` | `AgentAPI.PersonalityFiles` |
+| `GET` | `/api/personality/templates` | `agents.go` | `AgentAPI.PersonalityTemplates` |
+| `GET` | `/api/personality/{filename}` | `agents.go` | `AgentAPI.Personality` |
+| `PUT` | `/api/personality/{filename}` | `agents.go` | `AgentAPI.WritePersonality` |
+| `POST` | `/api/quickstart/apply` | `quickstart.go` | `QuickstartAPI.Apply` |
+| `POST` | `/api/quickstart/dismiss` | `quickstart.go` | `QuickstartAPI.Dismiss` |
+| `POST` | `/api/quickstart/fields` | `quickstart.go` | `QuickstartAPI.Fields` |
+| `GET` | `/api/quickstart/state` | `quickstart.go` | `QuickstartAPI.State` |
+| `POST` | `/api/quickstart/validate` | `quickstart.go` | `QuickstartAPI.Validate` |
+| `GET` | `/api/sessions` | `sessions.go` | `SessionsAPI.List` |
+| `GET` | `/api/sessions/running` | `sessions.go` | `SessionsAPI.Running` |
+| `DELETE` | `/api/sessions/{id}` | `sessions.go` | `SessionsAPI.Delete` |
+| `PUT` | `/api/sessions/{id}` | `sessions.go` | `SessionsAPI.Rename` |
+| `POST` | `/api/sessions/{id}/abort` | `sessions.go` | `SessionsAPI.Abort` |
+| `GET` | `/api/sessions/{id}/messages` | `sessions.go` | `SessionsAPI.Messages` |
+| `POST` | `/api/sessions/{id}/messages` | `sessions.go` | `SessionsAPI.AddMessage` |
+| `GET` | `/api/sessions/{id}/state` | `sessions.go` | `SessionsAPI.State` |
+| `GET` | `/api/skills/bundles` | `skills.go` | `SkillsAPI.Bundles` |
+| `GET` | `/api/skills/bundles/{bundle}/skills` | `skills.go` | `SkillsAPI.List` |
+| `POST` | `/api/skills/bundles/{bundle}/skills` | `skills.go` | `SkillsAPI.Create` |
+| `DELETE` | `/api/skills/bundles/{bundle}/skills/{name}` | `skills.go` | `SkillsAPI.Delete` |
+| `GET` | `/api/skills/bundles/{bundle}/skills/{name}` | `skills.go` | `SkillsAPI.Read` |
+| `PUT` | `/api/skills/bundles/{bundle}/skills/{name}` | `skills.go` | `SkillsAPI.Write` |
+| `GET` | `/api/skills/slash-option-kinds` | `skills.go` | `SkillsAPI.SlashOptionKinds` |
+| `GET` | `/api/sops` | `sops.go` | `SopsAPI.List` |
+| `POST` | `/api/sops` | `sops.go` | `SopsAPI.Create` |
+| `POST` | `/api/sops/graph-draft` | `sops.go` | `SopsAPI.GraphDraft` |
+| `GET` | `/api/sops/graph-legend` | `sops.go` | `SopsAPI.GraphLegend` |
+| `GET` | `/api/sops/runs` | `sops.go` | `SopsAPI.Runs` |
+| `GET` | `/api/sops/trigger-sources` | `sops.go` | `SopsAPI.TriggerSources` |
+| `POST` | `/api/sops/wire-draft` | `sops.go` | `SopsAPI.WireDraft` |
+| `DELETE` | `/api/sops/{name}` | `sops.go` | `SopsAPI.Delete` |
+| `PUT` | `/api/sops/{name}` | `sops.go` | `SopsAPI.Save` |
+| `GET` | `/api/sops/{name}/full` | `sops.go` | `SopsAPI.Get` |
+| `GET` | `/api/sops/{name}/graph` | `sops.go` | `SopsAPI.Graph` |
+| `POST` | `/api/sops/{name}/run` | `sops.go` | `SopsAPI.Run` |
+| `POST` | `/api/sops/{name}/runs/{run_id}/cancel` | `sops.go` | `SopsAPI.Cancel` |
+| `POST` | `/api/sops/{name}/runs/{run_id}/decide` | `sops.go` | `SopsAPI.Decide` |
+| `GET` | `/api/sops/{name}/runs/{run_id}/overlay` | `sops.go` | `SopsAPI.RunOverlay` |
+| `GET` | `/api/status` | `system.go` | `SystemAPI.Status` |
+| `GET` | `/api/tools` | `system.go` | `SystemAPI.Tools` |
+| `POST` | `/api/tools/param-options.` | `system.go` | `SystemAPI.ToolParamOptions` |
+| `GET` | `/api/tuis` | `system.go` | `SystemAPI.Tuis` |
+| `POST` | `/api/upload` | `files.go` | `FilesAPI.UploadImage` |
+| `GET` | `/api/version/check` | `system.go` | `SystemAPI.VersionCheck` |
+| `POST` | `/api/version/upgrade` | `system.go` | `SystemAPI.Upgrade` |
+| `GET` | `/api/version/upgrade/status` | `system.go` | `SystemAPI.UpgradeStatus` |
+| `POST` | `/api/webauthn/auth/finish` | `webauthn.go` | `WebAuthnAPI.AuthFinish` |
+| `POST` | `/api/webauthn/auth/start` | `webauthn.go` | `WebAuthnAPI.AuthStart` |
+| `GET` | `/api/webauthn/credentials` | `webauthn.go` | `WebAuthnAPI.Credentials` |
+| `DELETE` | `/api/webauthn/credentials/{id}` | `webauthn.go` | `WebAuthnAPI.DeleteCredential` |
+| `POST` | `/api/webauthn/register/finish` | `webauthn.go` | `WebAuthnAPI.RegisterFinish` |
+| `POST` | `/api/webauthn/register/start` | `webauthn.go` | `WebAuthnAPI.RegisterStart` |
+| `GET` | `/health` | `system.go` | `SystemAPI.Health` |
+| `GET` | `/metrics` | `system.go` | `SystemAPI.Metrics` |
+| `POST` | `/pair` | `pairing.go` | `PairingAPI.PairLegacy` |
+| `GET` | `/pair/code` | `pairing.go` | `PairingAPI.InitialCode` |
+| `POST` | `/webhook` | `webhook.go` | `WebhookAPI.Send` |
+| `GET` | `/ws/canvas/{id}` | `canvas.go` | `CanvasAPI.Watch` |
+| `GET` | `/ws/chat` | `chat.go` | `Client.Chat` |
+| `GET` | `/ws/sops/runs` | `sops.go` | `SopsAPI.WatchRuns` |

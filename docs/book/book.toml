@@ -1,0 +1,21 @@
+[book]
+title = "zeroclaw-api-client-go"
+description = "Documentation for the Go client of the ZeroClaw gateway HTTP API."
+authors = ["RustLangLatam"]
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "default-dark"
+preferred-dark-theme = "default-dark"
+git-repository-url = "https://github.com/RustLangLatam/zeroclaw-api-client-go"
+edit-url-template = "https://github.com/RustLangLatam/zeroclaw-api-client-go/edit/main/docs/book/{path}"
+site-url = "/"
+
+[output.html.search]
+enable = true
+limit-results = 30
+use-boolean-and = true
+
+[output.html.print]
+enable = false
