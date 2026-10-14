@@ -60,3 +60,29 @@ decodes real answers:
 ZEROCLAW_URL=http://127.0.0.1:42617 ZEROCLAW_TOKEN=zc_… \
   go test -tags live -run TestLive -v .
 ```
+
+The write test (`live_write_test.go`) exercises every other route against a
+real gateway. Each subtest creates what it needs under the `sdk-go-test`
+prefix and removes it afterwards; it only runs with `ZEROCLAW_WRITE=1`, and
+starts agent turns (chat, webhook, A2A: they spend model tokens) only with
+`ZEROCLAW_TURNS=1`:
+
+```sh
+ZEROCLAW_URL=… ZEROCLAW_TOKEN=… ZEROCLAW_AGENT=<alias> \
+  ZEROCLAW_WRITE=1 ZEROCLAW_TURNS=1 go test -tags live -run TestLiveWrites -v .
+```
+
+Subtests skip what the gateway does not offer:
+
+| Subtest | Needs |
+|---|---|
+| `sops` | `[sop] sops_dir` set, and the admin routes (the engine loads SOPs on a daemon reload) |
+| `admin` | the test running on the gateway host: admin routes answer loopback only. For a gateway in Docker, build the binary (`CGO_ENABLED=0 go test -c -tags live`) and run it with `docker run --network container:<gateway>` |
+| `a2a` | `a2a.server.enabled = true` and the agent's `a2a.published = true` |
+| `webauthn` | a ZeroClaw built with `--features webauthn` and `security.webauthn.enabled = true`. The test signs with a software ES256 authenticator: it registers, authenticates twice, checks that a replayed counter and a forged signature are refused, and deletes the key |
+
+Never run it against a gateway you cannot afford to have changed: a run cut
+short may leave `sdk-go-test` leftovers. Channel writes (sending, group
+chats, relinking), `Shutdown`, `Upgrade`, `Quickstart().Apply`,
+`Config().Init` and `SelectSectionItem` are not exercised live: they reach
+real people or reconfigure the instance. The mock gateway covers them.

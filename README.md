@@ -236,8 +236,11 @@ ZEROCLAW_URL=http://127.0.0.1:42617 ZEROCLAW_TOKEN=zc_… go run ./examples/stat
   (`scripts/capture-vectors.py`, anonymized) must decode into the SDK's
   types and re-encode without losing a field.
 - **Benchmarks** for the hot paths: `go test -run x -bench .`
-- **A live, read-only test** against a running gateway:
-  `ZEROCLAW_URL=… ZEROCLAW_TOKEN=… go test -tags live -run TestLive -v .`
+- **Live tests** against a running gateway: every read decodes real
+  answers, and a write suite covers the rest of the surface (config, cron,
+  memory, files, skills, canvas, pairing, SOPs, admin, A2A, chat, webhooks,
+  events and WebAuthn with a software authenticator), cleaning up after
+  itself. See [Testing](docs/book/src/contributing/testing.md).
 
 ```sh
 go test -race ./...
