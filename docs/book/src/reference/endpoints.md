@@ -41,6 +41,12 @@ Routes the client deliberately does not call:
 | `GET` | `/api/channels` | `channels.go` | `ChannelsAPI.List` |
 | `POST` | `/api/channels/bind` | `channels.go` | `ChannelsAPI.Bind` |
 | `POST` | `/api/channels/{channel}/relink.` | `channels.go` | `ChannelsAPI.Relink` |
+| `GET` | `/api/channels/{channel}/rooms` | `channels.go` | `ChannelsAPI.Rooms` |
+| `POST` | `/api/channels/{channel}/rooms.` | `channels.go` | `ChannelsAPI.CreateRoom` |
+| `POST` | `/api/channels/{channel}/rooms/{room}/invites` | `channels.go` | `ChannelsAPI.Invite` |
+| `GET` | `/api/channels/{channel}/rooms/{room}/members` | `channels.go` | `ChannelsAPI.RoomMembers` |
+| `DELETE` | `/api/channels/{channel}/rooms/{room}/members/{user}` | `channels.go` | `ChannelsAPI.RemoveMember` |
+| `POST` | `/api/channels/{channel}/send` | `channels.go` | `ChannelsAPI.Send` |
 | `GET` | `/api/cli-tools` | `system.go` | `SystemAPI.CLITools` |
 | `GET` | `/api/config` | `config.go` | `ConfigAPI.Snapshot` |
 | `OPTIONS` | `/api/config` | `config.go` | `ConfigAPI.Schema` |

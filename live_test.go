@@ -88,6 +88,20 @@ func TestLiveEveryReadDecodes(t *testing.T) {
 	liveCheck[[]string](t, "canvas.list")(client.Canvas().List(ctx))
 	liveCheck[json.RawMessage](t, "quickstart.state")(client.Quickstart().State(ctx))
 
+	channels, err := client.Channels().List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ch := range channels {
+		rooms, err := client.Channels().Rooms(ctx, ch.Name)
+		if err != nil {
+			continue
+		}
+		t.Logf("ok      rooms of %s: %d", ch.Name, len(rooms))
+		if len(rooms) > 0 {
+			liveCheck[[]RoomMember](t, "room_members")(client.Channels().RoomMembers(ctx, ch.Name, rooms[0].ID))
+		}
+	}
 	sessions, err := client.Sessions().List(ctx)
 	if err != nil {
 		t.Fatal(err)

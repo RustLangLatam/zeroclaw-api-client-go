@@ -166,7 +166,7 @@ event and chat surface from Go.
 
 ```text
  your code
-    │  client.Channels().List(ctx)
+    │  client.Channels().Rooms(ctx, "whatsapp.main")
     ▼
  Client ── resource accessors (Config, Channels, Chat, …) ── typed requests/responses
     │
@@ -212,6 +212,7 @@ Runnable programs under `examples/`:
 | `status` | version, model and channels |
 | `pairing` | exchanging a pairing code for a token |
 | `config` | reading fields, listing agents, an atomic patch |
+| `group_chats` | channels, their group chats and members |
 | `events` | following the live event stream, reconnecting |
 | `chat` | streaming an agent's reply over the WebSocket |
 | `announce` | posting on a channel through a one-off cron job |
