@@ -13,6 +13,8 @@ Changes since the last tag. They become the release notes of the next version.
 
 ## Fixes
 
+- v0.2.0: `zeroclaw.Version` is `0.2.0`.
+
 - v0.1.2: the README shows the official Go gopher (designed by Renée French,
   CC BY 4.0) instead of an emoji. No code change.
 
