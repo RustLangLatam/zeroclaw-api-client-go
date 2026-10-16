@@ -263,6 +263,8 @@ The same client, with the same surface, behavior and tests:
 |---|---|---|
 | Rust | [zeroclaw-api-client-rust](https://github.com/RustLangLatam/zeroclaw-api-client-rust) | `cargo add zeroclaw-api-client` |
 | Python | [zeroclaw-api-client-python](https://github.com/RustLangLatam/zeroclaw-api-client-python) | `pip install zeroclaw-api-client` |
+| TypeScript | [zeroclaw-api-client-ts](https://github.com/RustLangLatam/zeroclaw-api-client-ts) | `npm install zeroclaw-api-client` |
+| Kotlin | [zeroclaw-api-client-kotlin](https://github.com/RustLangLatam/zeroclaw-api-client-kotlin) | `implementation("com.github.RustLangLatam:zeroclaw-api-client-kotlin:v0.1.0")` (JitPack) |
 
 ## Contributing
 
