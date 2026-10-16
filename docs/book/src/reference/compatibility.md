@@ -2,15 +2,16 @@
 
 ## ZeroClaw versions
 
-The client targets the ZeroClaw **0.8.5** gateway. It is verified against the
-RustLangLatam fork's production build, `0.8.5+unified.13` (branch
-`fix/whatsapp-silence-stopped-channel`), whose router is the
+This unreleased branch targets the patched ZeroClaw build `0.8.5+unified.18`,
+whose router is the
 [source of truth](../architecture/decisions/ADR-001-gateway-is-the-source-of-truth.md)
 for every request and response shape here.
 
 Against an upstream ZeroClaw 0.8.5 build everything works except these
-routes, which the fork adds; upstream answers them with its web UI fallback
-or 404:
+routes, which only the patched build has (upstream declined them in
+[#11434](https://github.com/zeroclaw-labs/zeroclaw/issues/11434)); upstream
+answers them with its web UI fallback or 404. They leave this branch once
+official ZeroClaw adopts them:
 
 | Route | Function |
 |---|---|
