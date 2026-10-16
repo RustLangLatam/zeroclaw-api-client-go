@@ -21,4 +21,10 @@ Changes since the last tag. They become the release notes of the next version.
 
 ## Breaking Changes
 
-None.
+- The client covers only the official ZeroClaw gateway. The channel routes a
+  fork added are gone: `Channels().Send`, `Rooms`, `CreateRoom`,
+  `RoomMembers`, `Invite` and `RemoveMember`, their types (`RoomSummary`,
+  `RoomMember`, `CreatedRoom`, `Participant`) and the `group_chats` example.
+  Official ZeroClaw never had these routes
+  ([zeroclaw-labs/zeroclaw#11434](https://github.com/zeroclaw-labs/zeroclaw/issues/11434)
+  declined them).

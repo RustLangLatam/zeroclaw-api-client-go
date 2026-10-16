@@ -40,11 +40,10 @@ if err != nil {
 }
 
 channels, err := client.Channels().List(ctx)
-rooms, err := client.Channels().Rooms(ctx, "whatsapp.main")
 _, err = client.Config().Set(ctx, "agents.helper.model", "gpt-5.4-mini", "")
 chat, err := client.Chat(ctx, "helper", zeroclaw.ChatOptions{})
 reply, err := chat.Ask(ctx, "Hi")
-fmt.Println(len(channels), len(rooms), reply.FullResponse)
+fmt.Println(len(channels), reply.FullResponse)
 ```
 
 Every call takes a `context.Context` first and returns an error to check

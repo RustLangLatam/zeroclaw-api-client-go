@@ -19,7 +19,7 @@ func TestGatewayErrorBodyVectors(t *testing.T) {
 	}{
 		{404, `{"error":"Cron job not found: x"}`, "Cron job not found: x", true, false, false, false},
 		{400, `{"code":"value_type_mismatch","message":"expected integer","path":"gateway.port"}`, "expected integer", false, false, false, false},
-		{403, `{"channel":"whatsapp.main","error":"not in send_channels"}`, "not in send_channels", false, true, false, false},
+		{403, `{"error":"pairing required"}`, "pairing required", false, true, false, false},
 		{401, "Unauthorized — provide a token\n", "Unauthorized — provide a token", false, true, false, false},
 		{429, `{"error":"Too many pairing requests.","retry_after":60}`, "Too many pairing requests.", false, false, true, true},
 		{502, `{"channel":"whatsapp.main","error":"channel did not create the room"}`, "channel did not create the room", false, false, false, true},

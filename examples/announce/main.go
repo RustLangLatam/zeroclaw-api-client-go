@@ -1,6 +1,6 @@
 // Command announce posts a message on a channel through an agent's channel
-// binding, on builds without /api/channels/{channel}/send: a one-off shell
-// cron job whose raw output is announced, run at once and deleted.
+// binding: a one-off shell cron job whose raw output is announced, run at
+// once and deleted.
 //
 //	ZEROCLAW_URL=… ZEROCLAW_TOKEN=… go run ./examples/announce helper whatsapp.main +34600000000 "Hello"
 package main
